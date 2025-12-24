@@ -171,6 +171,13 @@ export const parseTags = (productEvent: NostrEvent) => {
         return;
     }
   });
+  // NIP-99: Use event content as primary description, fall back to summary tag
+  const eventContent = productEvent.content?.trim();
+  if (eventContent) {
+    parsedData.summary = eventContent;
+  }
+  // If no content, parsedData.summary already has the value from the summary tag (or empty string)
+
   parsedData.totalCost = calculateTotalCost(parsedData);
   return parsedData;
 };

@@ -27,6 +27,7 @@ describe("parseTags", () => {
   it("should parse top-level event data and simple tags correctly", () => {
     const event = {
       ...baseEvent,
+      content: "", // Empty content so summary tag is used as fallback
       tags: [
         ["title", "My Product"],
         ["summary", "A great product"],
@@ -193,5 +194,71 @@ describe("parseTags", () => {
     const result = parseTags(event);
 
     expect(result.contentWarning).toBeFalsy();
+  });
+
+  describe("description parsing (NIP-99 compliance)", () => {
+    it("should use event content as primary description over summary tag", () => {
+      const event = {
+        ...baseEvent,
+        content: "This is the main description from content field",
+        tags: [
+          ["title", "My Product"],
+          ["summary", "This is the summary tag"],
+        ],
+      };
+      const result = parseTags(event);
+
+      expect(result.summary).toBe("This is the main description from content field");
+    });
+
+    it("should fall back to summary tag when content is empty", () => {
+      const event = {
+        ...baseEvent,
+        content: "",
+        tags: [
+          ["title", "My Product"],
+          ["summary", "Fallback summary description"],
+        ],
+      };
+      const result = parseTags(event);
+
+      expect(result.summary).toBe("Fallback summary description");
+    });
+
+    it("should fall back to summary tag when content is only whitespace", () => {
+      const event = {
+        ...baseEvent,
+        content: "   \n\t  ",
+        tags: [
+          ["title", "My Product"],
+          ["summary", "Fallback for whitespace content"],
+        ],
+      };
+      const result = parseTags(event);
+
+      expect(result.summary).toBe("Fallback for whitespace content");
+    });
+
+    it("should handle missing summary tag when content exists", () => {
+      const event = {
+        ...baseEvent,
+        content: "Description only in content",
+        tags: [["title", "My Product"]],
+      };
+      const result = parseTags(event);
+
+      expect(result.summary).toBe("Description only in content");
+    });
+
+    it("should return empty summary when both content and summary tag are missing", () => {
+      const event = {
+        ...baseEvent,
+        content: "",
+        tags: [["title", "My Product"]],
+      };
+      const result = parseTags(event);
+
+      expect(result.summary).toBe("");
+    });
   });
 });
